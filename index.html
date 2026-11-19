@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#f3a96a" />
+<title>TIANYANG</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;500&family=Noto+Serif+SC:wght@300;500&display=swap" rel="stylesheet" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='14' fill='%23f6b94a'/%3E%3C/svg%3E" />
+<style>
+  :root { --gold:#f7c76a; }
+  html, body { margin:0; height:100%; overflow:hidden; background:#2a1a30; overscroll-behavior:none; touch-action:none; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; font-family:'Cormorant Garamond', Georgia, 'Times New Roman', serif; }
+  #app { position:fixed; inset:0; }
+  canvas#view { position:absolute; inset:0; width:100%; height:100%; display:block; outline:none; }
+  #fade { position:absolute; inset:0; background:radial-gradient(ellipse at 50% 40%, #ffe3b0 0%, #f6b779 60%, #b9567a 100%); opacity:1; pointer-events:none; transition:opacity 2.4s ease; z-index:30; }
+  #fade.out { opacity:0; }
+  #title { position:absolute; inset:0; z-index:20; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#fff7e6; text-align:center; transition:opacity 1.6s ease; pointer-events:auto; cursor:pointer; background:radial-gradient(ellipse at 50% 55%, rgba(60,20,50,0) 30%, rgba(60,20,50,.38) 100%); }
+  #title.hide { opacity:0; pointer-events:none; }
+  #title h1 { margin:0; font-weight:300; font-size:clamp(44px, 11vw, 150px); letter-spacing:.32em; padding-left:.32em; text-shadow:0 2px 30px rgba(120,40,40,.55), 0 0 60px rgba(255,190,90,.55); }
+  #title .cn { margin-top:.2em; font-family:'Noto Serif SC', 'Songti SC', 'SimSun', serif; font-weight:300; font-size:clamp(20px, 4vw, 44px); letter-spacing:.9em; padding-left:.9em; color:#ffd98a; text-shadow:0 2px 16px rgba(120,40,40,.6); }
+  #title .sub { margin-top:3.2em; font-size:clamp(14px, 2.2vw, 22px); letter-spacing:.28em; text-transform:lowercase; opacity:.92; animation:pulse 2.8s ease-in-out infinite; text-shadow:0 1px 10px rgba(90,30,50,.7); }
+  @keyframes pulse { 0%,100% { opacity:.35 } 50% { opacity:1 } }
+  #hud { position:absolute; top:max(12px, env(safe-area-inset-top)); right:max(12px, env(safe-area-inset-right)); display:flex; gap:10px; z-index:15; transition:opacity .6s; }
+  #hud.hidden { opacity:0; pointer-events:none; }
+  .btn { width:42px; height:42px; border-radius:50%; border:1.5px solid rgba(255,230,170,.7); background:rgba(70,30,60,.32); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); color:#ffeec8; display:grid; place-items:center; cursor:pointer; padding:0; transition:background .2s, transform .2s; }
+  .btn:hover { background:rgba(120,50,70,.5); transform:scale(1.06); }
+  .btn svg { width:22px; height:22px; stroke:currentColor; fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+  #panel { position:absolute; top:calc(max(12px, env(safe-area-inset-top)) + 54px); right:max(12px, env(safe-area-inset-right)); z-index:16; min-width:220px; padding:16px 18px 14px; border-radius:16px; border:1.5px solid rgba(255,230,170,.55); background:rgba(54,22,50,.62); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); color:#ffeec8; display:none; font-size:17px; }
+  #panel.open { display:block; }
+  #panel h3 { margin:0 0 8px; font-weight:500; font-size:13px; letter-spacing:.24em; text-transform:uppercase; color:#ffd98a; }
+  .seg { display:flex; border:1.5px solid rgba(255,230,170,.55); border-radius:999px; overflow:hidden; margin-bottom:14px; }
+  .seg button { flex:1; background:none; border:0; color:#ffeec8; font:inherit; padding:7px 4px; cursor:pointer; }
+  .seg button.on { background:rgba(247,199,106,.9); color:#4a1c2c; }
+  .row { display:flex; align-items:center; justify-content:space-between; gap:16px; }
+  .sw { width:44px; height:24px; border-radius:99px; background:rgba(255,230,170,.28); position:relative; cursor:pointer; border:0; padding:0; }
+  .sw::after { content:''; position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:#fff3d6; transition:transform .2s; }
+  .sw.on { background:rgba(247,199,106,.9); } .sw.on::after { transform:translateX(20px); }
+  #ghost { position:absolute; top:max(12px, env(safe-area-inset-top)); right:max(12px, env(safe-area-inset-right)); width:16px; height:16px; border-radius:50%; background:rgba(255,230,170,.35); z-index:14; display:none; cursor:pointer; }
+  #ghost.show { display:block; }
+  #touch { position:absolute; inset:0; z-index:10; pointer-events:none; display:none; }
+  body.touch #touch { display:block; }
+  #stick { position:absolute; width:120px; height:120px; margin:-60px 0 0 -60px; border-radius:50%; border:2px solid rgba(255,235,190,.6); background:radial-gradient(circle, rgba(255,230,170,.18), rgba(255,230,170,.06)); display:none; }
+  #stick i { position:absolute; left:50%; top:50%; width:52px; height:52px; margin:-26px 0 0 -26px; border-radius:50%; background:rgba(255,236,190,.78); box-shadow:0 0 18px rgba(255,200,110,.6); }
+  #sit { position:absolute; right:max(26px, env(safe-area-inset-right)); bottom:max(32px, env(safe-area-inset-bottom)); width:72px; height:72px; border-radius:50%; pointer-events:auto; }
+  #sit svg { width:32px; height:32px; }
+  body.hiddenui #sit, body.hiddenui #stick { opacity:0; }
+  #hint { position:absolute; left:0; right:0; bottom:max(22px, env(safe-area-inset-bottom)); z-index:12; text-align:center; color:#fff1d0; font-size:16px; letter-spacing:.18em; text-shadow:0 1px 10px rgba(80,30,50,.8); opacity:0; transition:opacity 1.5s; pointer-events:none; }
+  #hint.show { opacity:.85; }
+  #err { position:absolute; inset:0; display:none; place-items:center; color:#ffeec8; z-index:40; text-align:center; padding:30px; background:#2a1a30; font-size:20px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="view" tabindex="0"></canvas>
+  <div id="touch"><div id="stick"><i></i></div>
+    <button id="sit" class="btn" aria-label="Sit and rest"><svg viewBox="0 0 24 24"><path d="M6 20v-5.5a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3V20"/><circle cx="12" cy="6" r="2.6"/><path d="M4 20h16"/></svg></button>
+  </div>
+  <div id="hud">
+    <button id="mute" class="btn" aria-label="Mute"><svg viewBox="0 0 24 24"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z"/><path id="wave1" d="M15.5 9a4 4 0 0 1 0 6"/><path id="wave2" d="M18 6.5a8 8 0 0 1 0 11"/></svg></button>
+    <button id="cog" class="btn" aria-label="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/></svg></button>
+  </div>
+  <div id="panel">
+    <h3>Quality</h3>
+    <div class="seg" id="qseg"><button data-q="low">Low</button><button data-q="medium">Medium</button><button data-q="high">High</button></div>
+    <div class="row"><span>Hide UI</span><button class="sw" id="hideui" aria-label="Hide UI"></button></div>
+  </div>
+  <div id="ghost"></div>
+  <div id="hint"></div>
+  <div id="title"><h1>TIANYANG</h1><div class="cn">天阳</div><div class="sub" id="sub">loading</div></div>
+  <div id="fade"></div>
+  <div id="err"></div>
+</div>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>

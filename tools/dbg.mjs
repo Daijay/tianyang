@@ -1,0 +1,15 @@
+import { chromium } from 'playwright';
+import { spawn } from 'node:child_process';
+const PORT = 5199;
+const server = spawn('npx.cmd', ['vite', '--port', String(PORT), '--strictPort'], { stdio: 'pipe', shell: true });
+await new Promise((res, rej) => { const t = setTimeout(() => rej(new Error('vite timeout')), 30000); server.stdout.on('data', (d) => { if (String(d).includes('Local')) { clearTimeout(t); res(); } }); });
+const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--enable-webgl', '--use-gl=angle'] });
+const page = await (await browser.newContext({ viewport: { width: 960, height: 540 } })).newPage();
+page.on('console', (m) => { const t = m.text(); if (!t.includes('GL Driver') && !t.includes('toNonIndexed')) console.log('[' + m.type() + ']', t.slice(0, 400)); });
+page.on('pageerror', (e) => console.log('[pageerror]', e.message));
+await page.goto(`http://localhost:${PORT}/?q=${process.env.Q || "low"}&noauto=1&msaa=0`);
+await page.waitForFunction(() => window.__ty && window.__ty.ready, null, { timeout: 120000 });
+const script = process.argv[2];
+const steps = (await import(new URL(script, 'file:///' + process.cwd().split(String.fromCharCode(92)).join('/') + '/').href)).default;
+await steps(page);
+await browser.close(); server.kill(); process.exit(0);
