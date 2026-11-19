@@ -92,7 +92,7 @@ export class Post {
     this.godPass.enabled = !!q.godrays;
     this.bloomPass.enabled = !!q.bloom;
     this.bloom.resolution.scale = q.bloomScale ?? 0.5;
-    this.fxaaPass.enabled = !!q.fxaa;
+    this.fxaa.blendMode.opacity.value = q.fxaa ? 1 : 0; // never disable the last pass: it is the one that renders to screen
     this.noise.blendMode.opacity.value = q.grain ? 0.12 : 0.0;
     this.grade.uniforms.get('uShimmer').value = q.heat ? 1 : 0;
     this.composer.multisampling = q.msaa;

@@ -36,6 +36,7 @@ async function main() {
   }
   state.quality = QUALITY[qName];
   if (params.has('msaa')) state.quality = { ...state.quality, msaa: +params.get('msaa') };
+  if (params.has('o')) for (const kv of params.get('o').split(',')) { const [k, v] = kv.split(':'); state.quality = { ...state.quality, [k]: isNaN(+v) ? v === 'true' : +v }; }
   const noAuto = params.has('noauto');
 
   const renderer = createRenderer(canvas, state.quality);
